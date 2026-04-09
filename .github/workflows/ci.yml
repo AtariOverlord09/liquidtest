@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check-web-and-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo registry and build
+        uses: Swatinem/rust-cache@v2
+      - name: Cargo check (web)
+        run: cargo check --no-default-features --features web
+      - name: Cargo check (server)
+        run: cargo check --no-default-features --features server
+
+  check-ios-mobile:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain + iOS target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+      - name: Cache cargo registry and build
+        uses: Swatinem/rust-cache@v2
+      - name: Cargo check (iOS mobile)
+        run: cargo check --target aarch64-apple-ios --no-default-features --features mobile
