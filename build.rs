@@ -11,18 +11,33 @@ fn main() {
     }
 
     let target = env::var("TARGET").unwrap_or_default();
-    let sdk = if target.contains("sim") || target.contains("x86_64-apple-ios") {
-        "iphonesimulator"
-    } else {
-        "iphoneos"
+    let (sdk, swift_target) = match target.as_str() {
+        "aarch64-apple-ios" => ("iphoneos", "arm64-apple-ios"),
+        "aarch64-apple-ios-sim" => ("iphonesimulator", "arm64-apple-ios-simulator"),
+        "x86_64-apple-ios" => ("iphonesimulator", "x86_64-apple-ios-simulator"),
+        _ => {
+            panic!("unsupported iOS target `{target}` for Swift bridge build");
+        }
     };
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set"));
     let source = PathBuf::from("native/ios/LiquidGlassBridge.swift");
     let library = out_dir.join("libliquid_glass_bridge.a");
+    let sdk_path_output = Command::new("xcrun")
+        .args(["--sdk", sdk, "--show-sdk-path"])
+        .output()
+        .expect("failed to resolve Apple SDK path with xcrun");
+    if !sdk_path_output.status.success() {
+        panic!("failed to resolve SDK path for `{sdk}`");
+    }
+    let sdk_path = String::from_utf8(sdk_path_output.stdout)
+        .expect("xcrun returned non-utf8 sdk path")
+        .trim()
+        .to_string();
 
     let status = Command::new("xcrun")
         .args(["--sdk", sdk, "swiftc"])
+        .args(["-target", swift_target, "-sdk", &sdk_path])
         .args(["-parse-as-library", "-emit-library", "-static", "-O"])
         .arg(&source)
         .arg("-o")
@@ -32,7 +47,7 @@ fn main() {
 
     if !status.success() {
         panic!(
-            "Swift bridge build failed for target `{target}` using sdk `{sdk}`. \
+            "Swift bridge build failed for target `{target}` (swift target `{swift_target}`) using sdk `{sdk}`. \
              Ensure Xcode command line tools are installed."
         );
     }
