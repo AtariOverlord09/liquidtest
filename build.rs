@@ -11,10 +11,11 @@ fn main() {
     }
 
     let target = env::var("TARGET").unwrap_or_default();
+    // APIs used by the bridge (UIWindowScene + system material blur) require iOS 13+.
     let (sdk, swift_target) = match target.as_str() {
-        "aarch64-apple-ios" => ("iphoneos", "arm64-apple-ios"),
-        "aarch64-apple-ios-sim" => ("iphonesimulator", "arm64-apple-ios-simulator"),
-        "x86_64-apple-ios" => ("iphonesimulator", "x86_64-apple-ios-simulator"),
+        "aarch64-apple-ios" => ("iphoneos", "arm64-apple-ios13.0"),
+        "aarch64-apple-ios-sim" => ("iphonesimulator", "arm64-apple-ios13.0-simulator"),
+        "x86_64-apple-ios" => ("iphonesimulator", "x86_64-apple-ios13.0-simulator"),
         _ => {
             panic!("unsupported iOS target `{target}` for Swift bridge build");
         }

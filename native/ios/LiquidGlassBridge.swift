@@ -3,6 +3,10 @@ import UIKit
 @_cdecl("liquid_glass_install_overlay")
 public func liquid_glass_install_overlay() {
     DispatchQueue.main.async {
+        guard #available(iOS 13.0, *) else {
+            return
+        }
+
         guard
             let scene = UIApplication.shared.connectedScenes
                 .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
